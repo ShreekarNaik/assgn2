@@ -1,42 +1,45 @@
-# CS675 Assignment 2 — One Last Cup
+# CS675 Assignment 2: Rendering and Animation — "One Last Cup"
 
 | Name | Roll number |
 |---|---|
 | Jashanpreet Singh | 23B0985 |
 | Shreekar S Naik | 22B4518 |
 
+**YouTube link:** https://youtu.be/Cp4EvwKt8RU
+
+![Frame from the movie (frame 1050, the cup hand-off)](screenshots/movie.jpg)
+
+## Declaration
+
+We declare that this submission is our work, built on our Assignment 1 minifigures. We used the references and AI assistance listed under Sources and AI use below. We have reviewed the submitted code, understand the implementation and can explain it in the viva.
+
 ## Build and run
 
 ```sh
-# macOS dependencies: brew install glfw glew glm ffmpeg
 # Ubuntu: sudo apt install libglfw3-dev libglew-dev libglm-dev ffmpeg
+# macOS:  brew install glfw glew glm ffmpeg
 make
 ./a2-animate-minifig
 ```
 
-Run from the repository root. The program uses C++17 and OpenGL 3.3 core, with GLFW, GLEW and GLM. `make test` checks animation logic; `make clean` removes the executable. There are no command-line modes.
+Run the program from the repository root so that it can find `shaders/`, `textures/` and `keyframes.txt`. `make test` checks keyframe loading, interpolation and the walk cycle. `make clean` removes the executable.
 
-## Story
+## Story script
 
-The café is dim at closing time, initially lit by the chef’s warm lantern. A tired police officer switches on a cool flashlight and approaches during a patrol. The chef notices the visitor, gives a small greeting and brings the café lighting back. The officer turns toward the chef after approaching. Instead of rushing to close, the chef picks up the last takeaway coffee and offers it to the visitor. Both pause during the hand-off; the officer accepts the cup, acknowledges the kindness and leaves through the back doorway. The chef waves goodbye and resumes closing.
+The animation is set in a small diner at closing time. The idea was to tell a short and simple story with only two characters and one prop (a coffee cup).
 
-The chef carries a warm hanging lantern in the left hand; the officer holds a cool flashlight in the right. Their other hands are free to serve and receive the cup. These are different props with different lighting behaviour, rather than matching lights on their clothes.
+1. **Closing time (0 to 9 s).** The diner is dark. Only the chef's lantern is on. A tired police officer on night patrol switches on his flashlight and turns towards the diner aisle.
+2. **The visitor (9 to 19 s).** The camera follows the officer as he walks in through the central aisle. The chef notices him and turns the main lights back on (the pendant lights come on at 12 s and 14 s).
+3. **The last cup (19 to 29 s).** The camera switches to the chef. He turns to the counter, reaches forward, picks up the last takeaway coffee and walks into the aisle.
+4. **The hand-off (29 to 43 s).** The chef offers the cup and the officer takes it. Both of them pause for a moment during the exchange.
+5. **Thank you (43 to 49 s).** A side two-shot where the officer thanks the chef and the chef replies.
+6. **Goodbye (49 to 68 s).** The officer walks out through the back doorway with his coffee. There is a short body-mounted shot on the officer between 50.8 s and 54.2 s. The chef waves goodbye and goes back to closing.
 
-| Time | Action and camera |
-|---|---|
-| 0–9 s | Dim overview: the chef’s lantern and officer’s flashlight establish the portable lights; officer turns toward the aisle |
-| 9–19 s | Officer-follow view: approach through the central aisle |
-| 19–29 s | Chef-follow view: turn toward counter, forward reach, visible contact, lift and turn into the aisle |
-| 29–37 s | Officer-follow view: two steps, turn, offer and deliberate hand-off |
-| 37–43 s | Officer-follow view: chef releases the cup and the officer accepts the takeaway |
-| 43–49 s | Same side two-shot: thank-you and reply, without a reverse-angle cut |
-| 49–68 s | Wide departure, brief body-mounted coffee/portrait shot at 50.8–54.2 s, then wide aisle walk and doorway exit |
+The full animation is 2041 frames at 30 FPS, which is about 68 seconds.
 
-The movement includes eased starts/stops and pauses between actions. The main point lights turn on at 12 and 14 seconds, after the portable lights have been introduced. The exit is given extra time instead of accelerating the character to keep a 60-second running time. Story positions and poses are saved in the keyframe file. The C++ player interpolates them and applies a reusable walking cycle only on flagged intervals. Each path segment has a matching facing direction, the returning knee bends, and the lowest foot edge is placed at floor height using A1’s original limb dimensions. The fixed feet retain a toy-like rocking motion because A1 has no ankle joints. This is an inexpensive animation approximation: planned paths avoid furniture, and four foot-corner heights determine the floor offset. There is no general collision engine, contact solver or inverse-kinematics rig. There are 33 keyframes from frame 0 to 2040 at 30 FPS; inclusive recording produces 2041 images, approximately 68.03 seconds.
+## Models
 
-## Models and scene
-
-The minifigure builders come from the final [classroom A1 repository](https://github.com/Computer-Graphics-IITB/cs675-computer-graphics-2026-a1-model-shreekarnaik), commit `d34ada0`. Both models retain the submitted geometry and hierarchy:
+The two minifigures (a chef and a police officer) are the same models we made in Assignment 1. The hierarchy has not been changed:
 
 ```text
 Torso (root rotation XYZ, translation XYZ)
@@ -48,151 +51,153 @@ Torso (root rotation XYZ, translation XYZ)
     └── Right thigh (hip X) → Right lower leg (knee X) → Right foot
 ```
 
-There are 15 degrees of freedom per figure. A1 has no elbow joints. The original torso details, face geometry and hats remain. Wrist transforms are read from that same hierarchy to place the cup and handheld light props. No body parts or joints are added to or removed from the original figures.
+Each figure has 15 degrees of freedom. The props (the cup, the lantern and the flashlight) are not part of the hierarchy. We only read the wrist transform from the hierarchy to place them in the hand.
 
-The scene is a fully enclosed diner: cream walls, teal lower panels, brass trim, a framed night window, a walnut counter, shelves and containers, pastries on plates, side tables, cups and stools. Side seating leaves clear central and right-hand aisles. Four walls and a ceiling enclose the room; rectangular wall panels leave an actual window opening and an exit doorway. The environment map is visible through those openings. The officer passes through the doorway. All scene geometry uses the existing box and cylinder primitives. Small scene-building helpers and nested loops generate repeated furniture, window bars, shelf containers and lamp frames. The scene is organized into room, furniture and light/prop builders. There is no general scene-description engine or extra modelling dependency.
+## Scene
 
-## Textures and lighting
+The scene is an indoor diner. It has cream walls with teal lower panels, a ceiling, a walnut counter with shelves and containers, side tables with cups and stools and two pendant lamps. The wall panels are built around a real window opening and a real doorway so the skybox can be seen through them. The officer leaves through this doorway at the end. The furniture is placed along the sides so that the central aisle is clear for walking.
 
-Five original PPM textures are included in `textures/`:
+All the geometry is made from our box and cylinder primitives from A1. Repeated objects (tables, stools, window bars, shelf containers) are generated with small helper functions and loops in `scene.cpp`.
 
-| Texture | Use |
+## Textures
+
+All textures are our own images saved as plain PPM files in `textures/`. We wrote a small PPM loader so we did not need an extra image library.
+
+| Texture | Where it is used |
 |---|---|
-| chef.ppm | Large checks on the chef's torso |
-| police.ppm | Blue uniform stripes and gold trim on the officer's torso |
-| tiles.ppm | Quiet cream/green floor tiles |
-| wood.ppm | Walnut counter and tabletops |
-| sky.ppm | Equirectangular midnight environment panorama |
+| chef.ppm | Checked pattern on the chef's torso |
+| police.ppm | Blue uniform with stripes and gold trim on the officer's torso |
+| tiles.ppm | Floor tiles |
+| wood.ppm | Counter and tabletops |
+| sky.ppm | Night sky panorama used for the skybox |
 
-Planar UV projection chooses a coordinate pair from the face normal. Repeating texture coordinates and mipmapped filtering keep the materials readable at different distances. A small P3 PPM loader avoids an extra image-library dependency. All textures are included in the submission.
+Texture coordinates are made by planar projection. For each face we pick the two axes based on the face normal. We use `GL_REPEAT` and mipmaps so the textures still look fine from far away. The texture colour is multiplied with the material colour before lighting so all textured parts are lit properly.
 
-Lighting is per-pixel Blinn–Phong. The vertex shader supplies world-space positions and inverse-transpose transformed normals; the fragment shader combines material colour, texture colour, ambient light, attenuated diffuse light and specular highlights. A soft exposure curve prevents bright personal lights from clipping colours.
+## Lighting
 
-Two independent scene point lights sit beneath the pendant fixtures at (-6, 2.78, 0.5) and (6, 2.78, 0.5). One is warm and one gently cool. The pendants frame the side aisles, keeping them clear of the close camera views while lighting the characters from the front. Their attenuation is `2.2 / (1 + 0.08d + 0.025d²)`.
+We implemented per-pixel Blinn-Phong shading (this is more than the required Gouraud shading). The vertex shader passes the world-space position and normal (using the inverse transpose of the model matrix). The fragment shader adds ambient, diffuse and specular terms for every light that is switched on. A small tone curve stops the bright hand lights from washing out the colours.
 
-The chef's lantern is a warm point light in a brass cage, hanging from the existing left hand. The officer's flashlight is a cool spotlight fixed to the existing right-hand frame. A forward-and-down carrying pose aims the flashlight along the walking route rather than straight under the feet. The spotlight direction follows the arm and wrist; a smooth cone transitions between 16° and 30°. It casts a visible pool onto the floor when aimed down. The lantern uses attenuation strength 1.2 and the flashlight 4.0 with the same distance denominator as the pendant lights. Both lights are independently toggleable. The chef holds the lantern slightly forward and leaves it lit throughout the exchange, keeping the cage and warm light contribution visible rather than hiding them against the body. Their glass/lens and pendant undersides brighten when their corresponding lights are on. Ambient light preserves readability during closing. Shadows are not implemented.
+- **Two scene point lights** sit below the two pendant lamps at (-6, 2.78, 0.5) and (6, 2.78, 0.5). One is warm and one is slightly cool. Attenuation is `2.2 / (1 + 0.08d + 0.025d²)`.
+- **Chef's lantern** is a warm point light inside a brass cage. It hangs from the chef's left hand so it moves with him.
+- **Officer's flashlight** is a cool spotlight attached to the officer's right hand. Its direction comes from the arm and wrist rotation. The cone fades smoothly between 16° and 30° so it makes a soft pool of light on the floor.
 
-A 160-unit cube surrounds the entire scene, all three cameras and the lights. Its shader samples the environment panorama from the world-space direction. This distant sky is unlit; scene and minifigure textures receive lighting.
+All four lights can be switched on and off independently (F1 to F4). The lamp glass and the lantern glow brighter when their light is on. Shadows are not implemented.
+
+## Skybox
+
+A 160-unit cube surrounds the whole scene, all the lights and all three cameras. Its shader looks up the sky panorama using the world-space view direction. The sky is not lit. Everything else in the scene is lit.
 
 ## Cameras
 
-All cameras use perspective projection and near/far planes of 0.1/250. The interior overview uses 74°, the chef follow view 48°, and the officer views 65°.
+All three cameras are perspective cameras with near and far planes of 0.1 and 250. **C** cycles between them.
 
-- Camera 1 sees the complete scene. Its initial eye is (0, 7.9, 6.4), looking at (0, -0.3, -0.5), inside the room below the ceiling. It remains a stable overview during the opening and ending.
-- Camera 2 follows the chef; camera 3 follows the police officer. Their eye and target follow the figure’s root translation, with eye offsets (6, 2.8, -1.5) for the chef and (1, 2.8, 4.5) for the officer, and target offsets (0, 1, 0) and (0, 0.65, 0) respectively. The chef’s side view exposes the forward reach and cup contact without putting the officer in front of them. The chef faces the counter and reaches forward. The hand rests on the cup before ownership changes; a separate lift precedes the first step. The cup’s giver/receiver grip offsets differ by 180°, preserving world orientation at the transfer. Its open handle is staged to read in pickup and exchange views. Keeping the view orientation stable avoids camera spins when the characters turn to exchange the cup; each camera always looks at and moves with its figure.
+- **Camera 1 (overview).** Eye at (0, 7.9, 6.4) looking at (0, -0.3, -0.5) with a 74° field of view. It sees the whole room. Its eye and target can be moved with J/K/O and U/V/W and they are saved in the keyframes.
+- **Camera 2 (chef follow).** Eye offset (6, 2.8, -1.5) and target offset (0, 1, 0) from the chef's root position, with a 48° field of view. It moves with the chef and always looks at him. We placed it to the side so the reach and pickup of the cup is clearly visible.
+- **Camera 3 (officer follow).** Eye offset (1, 2.8, 4.5) and target offset (0, 0.65, 0) from the officer, with a 65° field of view. It moves with the officer and always looks at him.
 
-The officer camera also has a body-mounted SnorriCam mode: local eye (0.9, 1.45, 3.5), target (0, 1.45, 0) and up direction are transformed with the root, keeping the officer steady while the café moves behind him. It is used from 50.8–54.2 seconds during the departure, with wide views before and after to preserve the route. F toggles the mode and its state is saved in the keyframe file.
-
-C cycles through all three. Follow offsets are fixed; the overview eye and target can be edited and keyframed.
+Camera 3 also has a body-mounted mode (toggled with **F**). In this mode the eye and target are fixed in the officer's local frame, so he stays steady on screen and the diner moves behind him. We used it for a few seconds while he walks out.
 
 ## Keymap
 
 | Key | Function |
 |---|---|
-| Tab | Select chef / police for posing |
-| C | Cycle overview / chef-follow / police-follow camera |
-| F | Toggle body-mounted SnorriCam mode for the officer-follow camera |
-| M | Enable/disable the reusable walking cycle for the selected figure during playback |
+| Tab | Select the chef or the officer for posing |
+| C | Cycle camera: overview / chef follow / officer follow |
+| F | Toggle body-mounted mode for the officer camera |
 | F1 / F2 | Toggle left / right pendant point light |
 | F3 / F4 | Toggle chef lantern / officer flashlight |
-| G | Cycle cup placement: counter / chef right hand / officer left hand |
-| A / Shift+A | Increase / decrease cup tilt |
-| S | Append the actual current scene state to keyframes.txt, incrementing timestamp by 10 |
-| L | Load keyframes.txt and print the number loaded |
-| P | Play the loaded animation |
-| R | Play and save every animation frame |
-| Escape | Stop playback/recording; quit when idle |
-| Backspace | Reset selected figure |
-| X / Y / Z | Rotate selected figure's root around X / Y / Z |
-| Left / Right | Translate figure along X |
-| Up / Down | Translate figure along Y |
-| = / - | Translate figure along Z |
-| 1 | Rotate neck around Y |
-| 2 / 3 | Rotate left / right shoulder around X |
-| 4 / 5 | Rotate left / right hip around X |
+| M | Toggle the walk cycle for the selected figure |
+| G | Cycle the cup position: counter / chef's hand / officer's hand |
+| A / Shift+A | Tilt the cup forward / back |
+| X / Y / Z | Rotate the selected figure about X / Y / Z |
+| Left / Right | Move the figure along X |
+| Up / Down | Move the figure along Y |
+| = / - | Move the figure along Z |
+| 1 | Rotate neck (Y) |
+| 2 / 3 | Rotate left / right shoulder (X) |
+| 4 / 5 | Rotate left / right hip (X) |
 | 6 / 7 | Bend left / right knee |
-| 8 / 9 | Rotate left / right wrist around Y |
-| Shift + rotation key | Reverse the rotation direction |
-| J / K / O | Increment overview eye X / Y / Z |
-| U / V / W | Increment overview target X / Y / Z |
-| Shift + camera adjustment | Reverse camera adjustment |
+| 8 / 9 | Rotate left / right wrist (Y) |
+| Shift + joint key | Rotate the joint the other way |
+| J / K / O | Move overview camera eye along X / Y / Z |
+| U / V / W | Move overview camera target along X / Y / Z |
+| Shift + camera key | Move the camera the other way |
+| Backspace | Reset the selected figure |
+| S | Save the current scene state as a keyframe in `keyframes.txt` |
+| L | Load `keyframes.txt` and print how many keyframes were read |
+| P | Play the loaded animation |
+| R | Play the animation and save every frame as an image |
+| Escape | Stop playback or recording; quit when idle |
 
-On macOS, use Fn with F1–F4 if the keyboard assigns those keys to system functions. Figure posing retains A1's fixed increments on press/repeat. Playback owns the scene until it finishes or Escape is pressed. Back up the supplied story before saving new keyframes: S appends to the file.
+On macOS you may need to hold Fn with F1 to F4.
 
-## Animation authoring: 33 story poses and one reusable walk
+## Keyframe format
 
-The final file contains **33 story keyframes**, not individually recorded footfalls. They describe the meaningful poses, positions, turns, cup contacts, light changes and camera cuts. A small C++ walking function supplies the repeated steps between those poses. M enables/disables that cycle for the selected figure, and both figures’ walk flags are saved in the keyframe file.
+Each line of `keyframes.txt` is one keyframe. It has an integer frame number followed by 47 numbers in this order:
 
-**S saves the current scene; L loads the file; P plays; R captures.** For manual authoring, set a pose/position and the required light/camera/walk states, then press S. S uses timestamps 0,10,20... by default; adjust the timestamp column to set the intended pacing. Walking requires only start/stop positions and a walk flag, rather than dozens of per-step poses. N and the former suggestion queue have been removed.
+1. 4 light states (0/1): left pendant, right pendant, lantern, flashlight
+2. Camera index (0/1/2)
+3. Overview camera eye XYZ and target XYZ
+4. Selected figure (0 chef / 1 officer)
+5. Chef's 15 values, then the officer's 15 values. For each figure the order is root rotation XYZ, root translation XYZ, neck Y, left and right shoulder, left and right hip, left and right knee, left and right wrist.
+6. Cup holder (0/1/2), cup tilt in degrees, officer body-camera mode (0/1), chef walk flag (0/1), officer walk flag (0/1)
 
-The walk is a deliberately small approximation based on distance travelled along the keyframed route. It alternates hips/knees and offsets the root using the lowest foot corners from A1’s original dimensions. It does not use collision detection, inverse kinematics or a physics engine. Disable M for deliberately posed or stationary legs; their recorded angles still interpolate normally. The original hierarchy is unchanged.
+The final file has 33 keyframes from frame 0 to frame 2040.
 
-The current story was planned with AI assistance. `tools/create_story.py` contains 33 named story times and prepares reference states in `authoring/story_notes.txt`; it does not write the final file. The supplied states were staged during automated verification and saved through the app’s S handler, then reloaded with L. This is not evidence of human keypresses or a claim that the authors personally hand-posed the supplied file. `tools/retime_recording.py` changes only the timestamp column of that recording, preserving all saved values, as checked against the original recording. The helpers and Codex assistance are disclosed so the animation has an inspectable provenance rather than an invented manual-authoring story.
+## How the keyframes were made
 
-The normal interactive S/L/P/R path needs no Python helper. Both authors should review, reproduce and adjust these 33 poses themselves before submitting, understand the small walking function, and finalize their own declaration. The assignment does not explicitly settle scripted planning assistance; do not claim instructor permission that has not been given.
+We organised the story into key poses: the officer enters, the chef turns and reaches for the cup, and the two figures exchange it before the officer leaves. The final `keyframes.txt` stores these poses and their timing at 30 FPS. To edit or add poses, we can use the keyboard controls, set the lights and camera, and press **S**. S appends the current state 10 frames after the last saved keyframe; the first column can then be edited to change the timing. **L** reloads the file and **P** previews the result. Make a copy of `keyframes.txt` before saving new poses.
 
-## Keyframe format and playback
+### Interpolated walk cycle
 
-Each plain-text line has an integer frame timestamp followed by 47 numeric fields, with no labels:
+Walking was the hardest part. To make proper steps with only keyframes we would have needed a new keyframe for every footstep, which would mean many keyframes for each walk and it was very hard to keep the feet on the floor that way.
 
-1. Four light states (0/1), then camera index (0/1/2).
-2. Overview eye XYZ and target XYZ.
-3. Active figure (0 chef / 1 police).
-4. Chef's 15 A1 degrees of freedom, then officer's 15.
-5. Cup holder (0 counter / 1 chef / 2 officer), tilt in degrees, officer body-camera mode, and chef/officer walk-cycle flags (all mode flags are 0/1).
+Instead we only keyframe the start and end position of a walk and set the walk flag (key **M**) on that keyframe. During playback, when the flag is on, the player computes how far the figure has moved along its interpolated path. It divides this distance by the stride length to get the phase of a simple walk cycle, with the two legs half a cycle apart. In the first half of the cycle the leg is on the ground and the hip moves linearly from -14° to +14°. In the second half the leg swings forward with a smoothstep curve and the knee bends up to 35° with a sine curve. The swing is faded in and out over the first and last 0.35 units of the walk so the figure starts and stops from a standing pose. The figure's height is then adjusted so the lowest corner of the feet stays on the floor (we use the leg sizes from A1 for this). Because the phase comes from the distance moved, the steps speed up and slow down with the eased motion which reduces foot sliding. This is an approximate walk cycle, without inverse kinematics or a contact solver. Our figures have no ankle joints so the feet rock a little like a real LEGO toy.
 
-The per-figure order is root rotation XYZ, translation XYZ, neck Y, left/right shoulder X, left/right hip X, left/right knee X and left/right wrist Y. Light states, camera index, cup holder, body-camera mode, walk flags and selected figure change at keyframe boundaries. Other fields interpolate linearly; root rotations use the shortest signed angular difference. The loader rejects malformed fields, nonfinite values and unordered timestamps, and reports the keyframe count.
+When the flag is off the hip and knee angles stored in the keyframes are interpolated normally. We use this for the standing poses, the reach and the hand-off.
 
-GLFW supplies `glfwGetTime`, but has no timer-callback registration API. The application's `FrameTimer::dispatch` uses that clock to invoke a callback at 1/30-second deadlines from the window event loop. There is no sleep loop: input events remain responsive. Every animation frame is rendered in order, even when capture takes longer than real time. The exported movie is therefore exactly 30 FPS without dropped animation frames.
+## Playback and interpolation
 
-## Recording and movie
+**L** reads `keyframes.txt`, checks that every line has the right number of values and that the frame numbers increase and prints the number of keyframes read. **P** plays them back.
+
+For every frame between two keyframes we compute `t = (frame - f0) / (f1 - f0)` and interpolate every continuous value (positions, joint angles, camera eye and target, cup tilt) linearly. For root rotations we take the shorter way around so a figure never spins 350° when it should turn 10°. Values that should not be interpolated (light states, camera index, cup holder, body-camera mode, walk flags, selected figure) keep the value of the earlier keyframe until the next keyframe is reached.
+
+Playback runs from a timer callback, not a loop with `sleep()`. GLFW does not have a timer-callback API like GLUT, so we wrote a small `FrameTimer` class in `main.cpp`. Each time round the normal event loop it checks `glfwGetTime()` and calls the frame callback whenever the next 1/30 s deadline has passed. If we had used a loop with `sleep()` the window would freeze between frames, key presses (like Escape) would not be handled and the frame rate would drift because the time spent rendering is added on top of the sleep time.
+
+## Recording and making the movie
+
+Pressing **R** plays the same animation and after every frame is rendered it reads the back buffer with `glReadPixels` and writes it as `frames/frame-00000.ppm`, `frames/frame-00001.ppm` and so on (rows are flipped because OpenGL starts at the bottom). In record mode every frame is saved even if saving is slower than real time, so no frames are skipped. The program checks the free disk space before it starts. If an old `frames/` folder exists it is renamed instead of being deleted.
+
+We joined the frames and added the sound with ffmpeg:
 
 ```sh
-./a2-animate-minifig
-# Press L, then R in the window. Wait for “Playback complete”.
-python3 tools/make_movie.py
+ffmpeg -framerate 30 -i frames/frame-%05d.ppm -i foley.wav \
+       -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest one-last-cup.mp4
 ```
 
-Recording reads the back buffer before swap, corrects pack alignment, flips rows vertically and writes `frames/frame-00000.ppm` onward. It checks available disk space first. If a previous capture exists, it is moved to the next unused `frames-previous-N` directory; no old frames are deleted. Keep the window dimensions fixed while recording. A Retina 1920×1080 capture takes roughly 13 GB; the delivered movie uses 1280×720 frames, roughly 5.7 GB before encoding.
-
-The movie script combines the images into H.264 video with an original synthesized chord soundtrack encoded as AAC. No external music recordings or samples are used. It writes `output/one-last-cup.mp4` and extracts the hand-off frame to `screenshots/movie.jpg`. Existing encoded outputs are protected from overwriting.
-
-**YouTube:** Add your uploaded video URL here before submission.
-
-![Night Shift Café — frame from the movie](screenshots/movie.jpg)
+Instead of music we added foley sound effects. We printed the frame numbers of events from the keyframes (light switches, the cup being picked up and handed over and every footstep from the walk cycle) and placed a sound at each of those times. The sounds are synthesised by us: footsteps (heavier for the officer), light switch and flashlight clicks, a short hum when the pendant lamps come on, a ceramic clink for the cup, a door creak and thud when the officer leaves and a quiet room tone in the background. There is no copyrighted audio. Generated frames, audio and movies are excluded from version control. The final movie is linked at the top of this README.
 
 ## Code layout
 
-| File | Responsibility |
+| File | What it does |
 |---|---|
-| src/main.cpp | Keyboard commands, timer callback, playback and framebuffer recording |
-| src/scene.hpp/.cpp | Scene geometry, cameras, lights and scene-state transfer |
-| src/minifig.hpp/.cpp | Final A1 builders, joint controls and pose access |
-| src/node.hpp/.cpp | Node buffers, transforms, textures and recursive rendering |
-| src/geometry.hpp/.cpp | Triangle geometry, normals and UVs |
-| src/animation.hpp/.cpp | Keyframe parsing, saving and interpolation |
-| src/texture.hpp/.cpp | PPM texture loading |
+| src/main.cpp | Keyboard commands, frame timer, playback and frame saving |
+| src/scene.hpp/.cpp | Scene geometry, cameras, lights, props and scene state |
+| src/minifig.hpp/.cpp | The A1 minifigures and their joint controls |
+| src/node.hpp/.cpp | Hierarchy nodes, transforms, textures and drawing |
+| src/geometry.hpp/.cpp | Box and cylinder meshes with normals and UVs |
+| src/animation.hpp/.cpp | Keyframe loading, saving, interpolation and walk cycle |
+| src/texture.hpp/.cpp | PPM texture loader |
 | src/gl_context.hpp/.cpp | GLFW window and input setup |
-| src/shader_util.hpp/.cpp | Shader compilation and linking |
-| shaders/ | World-space vertex shader and per-pixel lighting shader |
-| tools/create_story.py | Reference notes for 33 assisted story poses; does not write the final file |
-| tools/retime_recording.py | Apply timestamps to S-recorded rows without changing any scene values |
-| tools/make_movie.py | Frame encoding, original soundtrack and movie screenshot |
+| src/shader_util.hpp/.cpp | Shader compiling and linking |
+| shaders/ | Vertex shader and per-pixel lighting fragment shader |
+| tests/ | Animation logic checks run by `make test` |
+| tools/ | Story planning, retiming and movie/audio generation scripts |
 
-## Sources and declaration
+## Sources and AI use
 
-The A1 source is our submitted classroom version linked above. A1 acknowledged the CS475/CS675 tutorials, GLFW/GLEW/GLM documentation, LEGO proportions and Claude as a coding helper. OpenAI Codex assisted with this A2 implementation, visual iteration and report. Textures and synthesized audio were created for this scene; no third-party art or music is bundled.
-
-**Declaration draft — both authors must review before submission:** This assignment extends our own submitted A1 minifigures. We acknowledge the references and AI coding assistance above and take responsibility for the implementation we submit and our ability to explain it in the viva. We will not represent assisted code as work completed without assistance.
-
-## Validation
-
-The program builds with `-Wall -Wextra`, and the animation tests pass. Independent GPT-6.1 Sol reviewers at low reasoning effort rated the revised rendered cut 9.0/10, judging student-level staging, motion/contact, camera framing and story coherence rather than photorealistic rendering. A separate source/rubric audit passed the implemented requirements; final submission caveats are listed below. A real OpenGL run checked all three cameras, four light switches and cup controls. The cup-transfer hand positions differ by less than 0.00005 world units. Pickup, hand-off, takeaway acknowledgement, lighting and departure frames were inspected during visual iteration.
-
-The production timer and recording paths generated the full 2041-frame sequence at 1280×720. The encoded production video matches the independently reviewed cut exactly on all 2041 decoded video frames (SSIM 1.0); the final audio is regenerated to the full duration. The encoded H.264/AAC movie is 68.03 seconds long at 30 FPS; full video/audio decoding completes without errors. The README JPG is captured frame 1050, during the hand-off. YouTube upload and the final author-reviewed declaration remain manual submission steps.
-
-## Submission
-
-Include the Makefile, README.md, final keyframes.txt, source, shaders, texture images and movie JPG. Do not submit frames/, frames-previous-*/, output/, output-previous-*/, backups/, authoring/, executables or object files. Texture images must remain included; no ignore rule hides them. Run `make clean` before packaging. Keep the repository private and submit through the course destination.
-
-Before submitting, both authors should understand the code, finalize their declaration and add the YouTube URL. The movie itself and captured frame sequences must stay outside the submitted archive.
+- CS475/CS675 OpenGL tutorials (Tutorial 8 for reading the framebuffer to an image)
+- GLFW, GLEW and GLM documentation
+- LearnOpenGL (Blinn-Phong lighting and spotlights)
+- Our own Assignment 1 code for the minifigures
+- Claude (Anthropic) and Codex (OpenAI) were used for help with implementation, debugging and documentation. We reviewed the resulting code and decisions and understand the implementation.

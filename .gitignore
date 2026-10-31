@@ -9,14 +9,18 @@
 *.a
 *.d
 *.out
+/a2-animate-minifig
 
 # Generated animation frames and renders
 /frames/
 /frames-previous-*/
 /output/
 /output-previous-*/
-/screenshots/
 
-# Backups and temporary authoring exports
-/backups/
 *.log
+
+# Local authoring exports and backups
+/authoring/
+/backups/
+__pycache__/
+*.pyc

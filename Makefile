@@ -17,7 +17,7 @@ BIN = a2-animate-minifig
 SRCS = src/texture.cpp src/animation.cpp src/main.cpp src/gl_context.cpp src/scene.cpp src/minifig.cpp \
        src/node.cpp src/geometry.cpp src/shader_util.cpp
 INCLUDES = src/animation.hpp src/texture.hpp src/gl_context.hpp src/scene.hpp src/minifig.hpp \
-           src/node.hpp src/geometry.hpp src/shader_util.hpp 
+           src/node.hpp src/geometry.hpp src/shader_util.hpp
 
 all: $(BIN)
 
@@ -28,6 +28,7 @@ clean:
 	rm -f $(BIN) *.o
 
 .PHONY: all clean test
+
 
 test:
 	$(CC) $(CPPFLAGS) $(CXXFLAGS) -Isrc tests/animation_test.cpp src/animation.cpp -o /tmp/cs675-a2-animation-test
