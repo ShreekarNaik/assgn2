@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Build products
+/build/
+*.o
+*.a
+*.d
+*.out
+
+# Generated animation frames and renders
+/frames/
+/frames-previous-*/
+/output/
+/output-previous-*/
+/screenshots/
+
+# Backups and temporary authoring exports
+/backups/
+*.log
